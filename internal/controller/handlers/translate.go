@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type TranslatorHandler struct {
@@ -49,6 +50,8 @@ func (fth *TranslatorHandler) translate(w http.ResponseWriter, r *http.Request) 
 	defer os.Remove("translate.txt")
 	defer f.Close()
 
+	res = removeLinks(res)
+
 	_, err = f.Write([]byte(res))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -65,4 +68,14 @@ func (fth *TranslatorHandler) translate(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Disposition", "attachment; filename=translated.docx")
 	w.Write(txt)
+}
+
+func removeLinks(text string) string {
+	words := strings.Split(text, " ")
+	for i, w := range words {
+		if strings.Contains(w, "http") || strings.Contains(w, "https") {
+			words = append(words[:i], words[i+1:]...)
+		}
+	}
+	return strings.Join(words, " ")
 }
