@@ -3,6 +3,7 @@ package db
 import "time"
 
 type User struct {
+	Uuid            string
 	Username        string
 	Password        string
 	Email           string

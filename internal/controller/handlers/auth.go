@@ -3,50 +3,56 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alserov/translator/internal/db"
+	"github.com/alserov/translator/internal/service"
 	"github.com/alserov/translator/internal/validator"
 	"net/http"
 )
 
-type AuthHandler struct {
-	repo  db.Repository
-	valid validator.Validator
+func NewAuthHandler(service service.Service) *AuthHandler {
+	return &AuthHandler{
+		service: service,
+		valid:   validator.NewValidator(),
+	}
 }
 
-func NewAuthHandler(repo db.Repository) *AuthHandler {
-	return &AuthHandler{
-		repo: repo,
-	}
+type AuthHandler struct {
+	service service.Service
+
+	valid validator.Validator
 }
 
 func (ah *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		ah.signup(w, r, ah.repo)
+		ah.signup(w, r)
 	case http.MethodPatch:
-		ah.login(w, r, ah.repo)
+		ah.login(w, r)
 	}
 }
 
-func (ah *AuthHandler) signup(w http.ResponseWriter, r *http.Request, repo db.Repository) {
-	var user User
+func (ah *AuthHandler) signup(w http.ResponseWriter, r *http.Request) {
+	var user service.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("failed to decode request body: %v", err),
-		})
+		handleError(w, err)
+		return
 	}
 
 	if err := ah.valid.Validate(user); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("invalid data: %v", err),
-		})
+		handleError(w, err)
+		return
 	}
 
-	fmt.Println(user)
+	uuid, err := ah.service.CreateUser(r.Context(), user)
+	if err != nil {
+		fmt.Println(err)
+		handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(UuidResponse{Uuid: uuid})
 }
 
-func (ah *AuthHandler) login(w http.ResponseWriter, r *http.Request, repo db.Repository) {
+func (ah *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 
 }

@@ -1,11 +1,27 @@
-package handlers
+package service
 
 import (
+	"io"
 	"time"
 )
 
-type ErrorResponse struct {
-	Error string `json:"error"`
+type Error struct {
+	Err  string `json:"error"`
+	Code int
+}
+
+func (e *Error) Error() string {
+	return e.Err
+}
+
+const (
+	ServerError = iota
+	UserError
+)
+
+type ServiceError struct {
+	error
+	ErrorType uint32
 }
 
 type User struct {
@@ -15,6 +31,14 @@ type User struct {
 	RequestsBalance uint32     `json:"requestsBalance"`
 	CreatedAt       *time.Time `json:"createdAt"`
 	Token           string     `json:"token"`
+}
+
+type TranslateParams struct {
+	File io.Reader
+
+	From        string
+	To          string
+	RemoveLinks bool
 }
 
 type GoogleTranslateReq struct {

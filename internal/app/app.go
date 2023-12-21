@@ -7,7 +7,8 @@ import (
 	"github.com/alserov/translator/internal/config"
 	"github.com/alserov/translator/internal/controller"
 	"github.com/alserov/translator/internal/controller/handlers"
-	"github.com/alserov/translator/internal/db/clickhouse"
+	"github.com/alserov/translator/internal/db/mysql"
+	"github.com/alserov/translator/internal/service"
 	"log/slog"
 	"net/http"
 	"os"
@@ -40,11 +41,20 @@ func NewApp(cfg *config.Config) App {
 }
 
 func (a *app) MustStart() {
-	db := clickhouse.MustConnect(a.dsn)
-	repo := clickhouse.NewRepository(db)
+	defer func() {
+		err := recover()
+		if err != nil {
+			fmt.Println("recovered panic: ", err)
+		}
+	}()
 
-	authHandler := handlers.NewAuthHandler(repo)
-	translatorHandler := handlers.NewTranslatorHandler()
+	db := mysql.MustConnect(a.dsn)
+	repo := mysql.NewRepository(db)
+
+	serv := service.NewService(repo)
+
+	authHandler := handlers.NewAuthHandler(serv)
+	translatorHandler := handlers.NewTranslatorHandler(serv)
 	controller.NewRouter(&controller.Handlers{
 		Auth:       authHandler,
 		Translator: translatorHandler,

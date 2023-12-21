@@ -1,6 +1,9 @@
 package db
 
+import "context"
+
 type Repository interface {
-	CreateUser(user User) (uuid string, err error)
-	TopUpBalance(userUuid string, reqAmount uint32) error
+	CreateUser(ctx context.Context, user User) (err error)
+	TopUpRequests(ctx context.Context, userUuid string, reqAmount uint32) error
+	DebitRequests(ctx context.Context, userUuid string, reqAmount uint32) error
 }
