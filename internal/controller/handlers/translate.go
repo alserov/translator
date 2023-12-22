@@ -1,9 +1,22 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/alserov/translator/internal/service"
 	"net/http"
 )
+
+func handleError(w http.ResponseWriter, err error) {
+	if e, ok := err.(*service.Error); ok {
+		w.WriteHeader(e.Code)
+		json.NewEncoder(w).Encode(e)
+		return
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Println(err)
+}
+
 
 func NewTranslatorHandler(service service.Service) *TranslatorHandler {
 	return &TranslatorHandler{
@@ -11,10 +24,10 @@ func NewTranslatorHandler(service service.Service) *TranslatorHandler {
 	}
 }
 
-func (fth *TranslatorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (th *TranslatorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		fth.translate(w, r)
+		th.translate(w, r)
 	}
 }
 
@@ -22,7 +35,7 @@ type TranslatorHandler struct {
 	service service.Service
 }
 
-func (fth *TranslatorHandler) translate(w http.ResponseWriter, r *http.Request) {
+func (th *TranslatorHandler) translate(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -40,7 +53,7 @@ func (fth *TranslatorHandler) translate(w http.ResponseWriter, r *http.Request) 
 		removeLinks = true
 	}
 
-	translatedDocx, err := fth.service.TranslateDocx(r.Context(), service.TranslateParams{
+	translatedDocx, err := th.service.TranslateDocx(r.Context(), service.TranslateParams{
 		RemoveLinks: removeLinks,
 		From:        from,
 		To:          to,

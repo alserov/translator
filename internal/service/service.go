@@ -4,59 +4,25 @@ import (
 	"code.sajari.com/docconv"
 	"context"
 	"fmt"
-	"github.com/alserov/translator/internal/db"
 	gt "github.com/bas24/googletranslatefree"
-	id "github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
 	"os"
 	"strings"
-	"time"
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, user User) (uuid string, err error)
 	TranslateDocx(ctx context.Context, params TranslateParams, userUuid string) (translated []byte, err error)
 }
 
-func NewService(repo db.Repository) Service {
-	return &service{
-		repo: repo,
-	}
+func NewService() Service {
+	return &service{}
 }
 
-type service struct {
-	repo db.Repository
-}
+type service struct {}
 
 const (
 	DEFAULT_REQUEST_BALANCE = 50
 )
-
-func (s *service) CreateUser(ctx context.Context, user User) (uuid string, err error) {
-	uuid = id.New().String()
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-
-	createdAt := time.Now()
-
-	err = s.repo.CreateUser(ctx, db.User{
-		Uuid:            uuid,
-		Username:        user.Username,
-		Password:        string(hashedPassword),
-		Email:           user.Email,
-		RequestsBalance: DEFAULT_REQUEST_BALANCE,
-		CreatedAt:       &createdAt,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return uuid, nil
-}
 
 func (s *service) TranslateDocx(ctx context.Context, params TranslateParams, userUuid string) (translated []byte, err error) {
 	txt, _, err := docconv.ConvertDocx(params.File)
@@ -89,10 +55,6 @@ func (s *service) TranslateDocx(ctx context.Context, params TranslateParams, use
 
 	translated, err = ioutil.ReadFile("translate.txt")
 	if err != nil {
-		return nil, err
-	}
-
-	if err = s.repo.DebitRequests(ctx, userUuid, 1); err != nil {
 		return nil, err
 	}
 

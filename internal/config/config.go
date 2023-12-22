@@ -9,7 +9,6 @@ import (
 
 type Config struct {
 	Port int    `yaml:"port"`
-	Dsn  string `yaml:"dsn"`
 
 	WriteTimeout time.Duration `yaml:"writeTimeout"`
 	ReadTimeout  time.Duration `yaml:"readTimeout"`
