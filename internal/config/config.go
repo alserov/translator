@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Port int    `yaml:"port"`
+	Port int `yaml:"port"`
 
 	WriteTimeout time.Duration `yaml:"writeTimeout"`
 	ReadTimeout  time.Duration `yaml:"readTimeout"`
@@ -29,7 +29,7 @@ func MustLoad() *Config {
 
 func fetchConfigPath() string {
 	var path string
-	flag.StringVar(&path, "c", "config/*.yaml", "path to config file")
+	flag.StringVar(&path, "c", "", "path to config file")
 	flag.Parse()
 
 	if path == "" {

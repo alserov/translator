@@ -18,11 +18,7 @@ func NewService() Service {
 	return &service{}
 }
 
-type service struct {}
-
-const (
-	DEFAULT_REQUEST_BALANCE = 50
-)
+type service struct{}
 
 func (s *service) TranslateDocx(ctx context.Context, params TranslateParams, userUuid string) (translated []byte, err error) {
 	txt, _, err := docconv.ConvertDocx(params.File)
@@ -39,7 +35,7 @@ func (s *service) TranslateDocx(ctx context.Context, params TranslateParams, use
 		return nil, err
 	}
 
-	f, _ := os.OpenFile("translate.txt", os.O_CREATE, 0644)
+	f, _ := os.OpenFile("translate.txt", os.O_CREATE|os.O_WRONLY, 0644)
 	defer os.Remove("translate.txt")
 	defer f.Close()
 

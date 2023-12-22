@@ -7,9 +7,7 @@ import (
 	"github.com/alserov/translator/internal/config"
 	"github.com/alserov/translator/internal/controller"
 	"github.com/alserov/translator/internal/controller/handlers"
-	"github.com/alserov/translator/internal/db/mysql"
 	"github.com/alserov/translator/internal/service"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,11 +16,7 @@ import (
 )
 
 type app struct {
-	port int
-	dsn  string
-
-	log *slog.Logger
-
+	port     int
 	rTimeout time.Duration
 	wTimeout time.Duration
 }
@@ -34,7 +28,6 @@ type App interface {
 func NewApp(cfg *config.Config) App {
 	return &app{
 		port:     cfg.Port,
-		dsn:      cfg.Dsn,
 		rTimeout: cfg.ReadTimeout,
 		wTimeout: cfg.WriteTimeout,
 	}
@@ -48,15 +41,10 @@ func (a *app) MustStart() {
 		}
 	}()
 
-	db := mysql.MustConnect(a.dsn)
-	repo := mysql.NewRepository(db)
+	serv := service.NewService()
 
-	serv := service.NewService(repo)
-
-	authHandler := handlers.NewAuthHandler(serv)
 	translatorHandler := handlers.NewTranslatorHandler(serv)
 	controller.NewRouter(&controller.Handlers{
-		Auth:       authHandler,
 		Translator: translatorHandler,
 	})
 
@@ -75,7 +63,7 @@ func (a *app) MustStart() {
 		}
 	}()
 
-	fmt.Println("app is running")
+	fmt.Println("app is running \t port: ", a.port)
 	select {
 	case <-chStop:
 		if err := s.Shutdown(context.Background()); err != nil {
